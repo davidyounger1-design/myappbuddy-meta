@@ -72,16 +72,17 @@ assume they're the same business.
 |---|---|---|---|---|
 | MyAppBuddy hub | `E:\MyAppBuddy` (repo root) | React+Vite / PHP 8 + Postgres (Supabase) | Live — myappbuddy.com.au | Yes, 2026-07 |
 | Leave Planner | `E:\MyAppBuddy\leave` (same repo) | PHP-rendered, inline JS, no build step | PHP 8 + own MySQL DB | Live — two installs: myappbuddy.com.au/leave (sold to new customers) and leave.theservicemanager.com (in active use), same code | Yes, 2026-07 |
-| Time Tracker | `E:\MyAppBuddy\timetracker` (same repo) | PHP-rendered, inline JS | PHP 8 + own MySQL DB | Live — timetracker.myappbuddy.com.au | Yes, 2026-07 |
+| Time Tracker | `E:\MyAppBuddy\timetracker` (prod), `devtimetracker` (dev) — same repo | PHP-rendered, inline JS | PHP 8 + own MySQL DB | Live — timetracker.myappbuddy.com.au | Yes, 2026-07 |
 | Daily Brief | `E:\MyAppBuddy\dailybrief` (same repo) | PHP-rendered | PHP 8 + own MySQL DB, Gemini API | Live | Yes, 2026-07 |
 | licencemanager (self-hosted MAB) | deployed copy of the hub, not a separate repo | same as hub | same as hub, own MySQL DB | Live — licencemanager.theservicemanager.com, TSM's own on-prem install of the MyAppBuddy hub | Yes, 2026-07 |
 | Companion | `E:\companion` — **separate repo** | **not verified** — only its MAB integration (support tickets/ideas via the hub's public embed API) was touched | Live, real subscribers | Partially — its use of the MAB hub API is verified; its own frontend/backend stack is not |
 | TSM Subs | `E:\tsm_subs` | **not touched** this round | React+Vite+PHP/MySQL per earlier notes | Not re-verified — carry forward with caution |
-| `myappbuddy-leave`, `leave_app`, `taskplanner`, other `Documents\Local_Claude\*` repos | `C:\Users\david\Documents\Local_Claude\` | — | Per that workspace's own `CLAUDE.md`: some are retired/superseded lineages (e.g. an earlier `myappbuddy` checkout, an earlier single-tenant Leave build). **Do not assume these are the same code as `E:\MyAppBuddy\leave` etc. above** — check that workspace's own `CLAUDE.md` before touching anything there. | Not re-verified this round |
+| taskmanager / Task Planner | TSM web root `taskmanager/` | **not verified** | Deployed, but **no MAB subscription-platform wiring found** (no `MAB_SECRET_KEY`/`MAB_API_BASE` anywhere in it) — it is not currently a MAB-integrated product, whatever else it does | Partially — absence of MAB wiring confirmed 2026-07 |
+| `myappbuddy` (retired), `myappbuddy-leave`, `leave_app`, other `Documents\Local_Claude\*` repos | `C:\Users\david\Documents\Local_Claude\` | — | Per that workspace's own `CLAUDE.md`: some are retired/superseded lineages (e.g. an earlier `myappbuddy` checkout retired in favour of `E:\MyAppBuddy`, an earlier single-tenant Leave build). **Do not assume these are the same code as `E:\MyAppBuddy\leave` etc. above** — check that workspace's own `CLAUDE.md` before touching anything there. | Not re-verified this round |
 
 **Known ambiguity to resolve:** there appear to be more than one historical
-lineage for at least "Leave" and possibly "Daily Brief" (one under
-`E:\MyAppBuddy`, another under `Documents\Local_Claude`). Confirm with David
+lineage for at least "Leave" (and possibly others) — one under
+`E:\MyAppBuddy`, another under `Documents\Local_Claude`. Confirm with David
 which is current/live before assuming either is dead, and update this table
 once resolved.
 
@@ -100,33 +101,61 @@ otherwise.
   own config — PHP apps: `config.php` (gitignored; `config.example.php` is
   the committed template); future Supabase-native apps: `.env` (gitignored,
   see that repo's `.env.example`).
-- **Hostinger SSH** (needed for every PHP app above):
-  - theservicemanager.com account (`u566554909`): `ssh -p 65002 -i ~/.ssh/hostinger_tsm u566554909@46.202.138.84`
-  - myappbuddy.com.au account (`u404781907`): `ssh -p 65002 -i ~/.ssh/hostinger_myappbuddy u404781907@153.92.11.14`
+- **Hostinger SSH:**
+  - **theservicemanager.com** account (`u566554909`): `ssh -p 65002 -i ~/.ssh/hostinger_tsm u566554909@46.202.138.84`
+    Web root: `domains/theservicemanager.com/public_html/`. Subdirectories:
+    `leave/` (Leave Planner, PHP), `taskmanager/` (Task Planner — no MAB
+    wiring, see table above), `timetracker/`, `subs/`, `tsmdl/`, `feedback/`,
+    `tsmpluspoc/`, plus a WordPress install at the web root. This plan also
+    supports Node.js apps (hPanel → Advanced → Node.js setup) if a future
+    app needs that instead of PHP.
+  - **myappbuddy.com.au** account (`u404781907`): `ssh -p 65002 -i ~/.ssh/hostinger_myappbuddy u404781907@153.92.11.14`
   - Each PC needs its own keypair generated locally and its **public** half
     added in the relevant hPanel → Advanced → SSH Access. Never copy a
     private key between machines if a fresh keypair is just as easy.
+  - **These are LIVE/production apps — edits take effect immediately.** Back
+    up any file (copy to `.bak`) before editing directly on a server.
 - **Never** paste API keys, tokens, DB passwords, or the contents of any
   `config.php`/`.env` into chat or into this file. (History: several
   `config.php` files were committed to the MyAppBuddy repo with live
   secrets — all identified and rotated 2026-07-02. Old values in git history
   are dead, not a live risk, but don't add new ones.)
 
-## Skills & session-scoped context
+## Skills, hooks, and multi-workspace `.claude/` directories
 
-- Global skills live in `~/.claude/skills/`. Some projects (e.g.
-  `Documents\Local_Claude`) also have **project-scoped** skills/hooks in
-  their own `.claude/` that only apply when the working directory is under
-  that tree — check both when looking for a skill, script, or hook.
+- Global skills live in `~/.claude/skills/`. Some workspaces (e.g.
+  `C:\Users\david\Documents\Local_Claude`, a separate multi-project folder
+  holding MyAppBuddy/Leave/TaskPlanner/DailyBrief/TSMPlus-family work) have
+  their **own** `.claude/` with project-scoped skills, scripts, and hooks
+  that only apply when the working directory is under that tree — check
+  both locations when looking for a skill, config file, or script (e.g. an
+  `explain` skill exists in both places, as distinct copies).
 - The Skill tool's live "available skills" list has been observed to
-  under-report (e.g. surfacing only the most-recently-touched skill). For
-  "what skills do I have" style questions, check `~/.claude/skills/` and the
-  current project's `.claude/skills/` directly rather than trusting that
-  list as exhaustive.
+  under-report (e.g. surfacing only the single most-recently-touched skill)
+  instead of the full set. For "list my skills" style requests, verify
+  directly against `~/.claude/skills/` and the current project's
+  `.claude/skills/` instead of trusting that list as exhaustive.
 - Hooks/skills added or edited **during** a running session may not take
-  effect immediately even though the directory is watched — retry once
-  before concluding something is broken; if it still doesn't work, restart
-  the session or reopen `/hooks`.
+  effect immediately even though the directory is already being watched —
+  observed cases: a brand-new hook fired live but a later edit to that same
+  hook's command wasn't picked up until restart; a newly created skill
+  failed as "unknown command" on first invocation then worked on immediate
+  retry. Verify once after adding/editing; retry once if it fails; if it
+  still doesn't work, restart the session or reopen `/hooks` rather than
+  deep-diagnosing further — there's no way to force a reload from within a
+  session.
+
+## Session behavior norms
+
+- **Don't execute example content as a literal task.** If a message reads as
+  a concrete, actionable request but immediately follows an interrupted
+  meta-request (e.g. "turn this into a reusable skill/template" cut off
+  before the example was pasted), check whether the new message is actually
+  the example payload for that meta-request before acting on it literally.
+- Verify facts with a tool before stating them as true — don't theorize or
+  guess, especially about live/production state. If two sources of context
+  disagree (e.g. this file vs. what a live system actually shows), say so
+  and ask, rather than picking one silently.
 
 ## Cross-app conventions
 
@@ -155,3 +184,20 @@ otherwise.
   Companion session's own history for the full handoff instructions.
 - Portfolio-wide move to Supabase: aspirational — no product app besides the
   MAB hub's own DB currently runs on Supabase.
+
+## Quick-reference paths (primary Windows dev PC — adjust per machine)
+
+Paths below are for the PC this table was written on. On a second PC, note
+your own equivalents here (or in a short PC-specific addition) rather than
+assuming these are universal — drive letters and folder layout may differ.
+
+| Path | What |
+|---|---|
+| `E:\MyAppBuddy\` | MyAppBuddy hub + family apps (timetracker, devtimetracker, leave, dailybrief, etc.) |
+| `E:\companion\` | Companion app (separate repo) |
+| `E:\tsm_subs\` | TSM Subs (separate repo) |
+| `C:\Users\david\Documents\Local_Claude\` | Multi-project workspace (older/parallel MyAppBuddy, Leave, TaskPlanner, DailyBrief, TSMPlus lineage — see "known ambiguity" above) |
+| `E:\task manager\` | Task Manager app |
+| `E:\Leave\` | Leave app (yet another path — reconcile against `E:\MyAppBuddy\leave` and `Documents\Local_Claude` before assuming which is current) |
+| `E:\tsm\` | TSM-related work |
+| `C:\Users\david` | Home — global Claude config only, not a project root |
