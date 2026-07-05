@@ -75,7 +75,7 @@ assume they're the same business.
 | Time Tracker | `E:\MyAppBuddy\timetracker` (prod), `devtimetracker` (dev) — same repo | PHP-rendered, inline JS | PHP 8 + own MySQL DB | Live — timetracker.myappbuddy.com.au | Yes, 2026-07 |
 | Daily Brief | `E:\MyAppBuddy\dailybrief` (same repo) | PHP-rendered | PHP 8 + own MySQL DB, Gemini API | Live | Yes, 2026-07 |
 | licencemanager (self-hosted MAB) | deployed copy of the hub, not a separate repo | same as hub | same as hub, own MySQL DB | Live — licencemanager.theservicemanager.com, TSM's own on-prem install of the MyAppBuddy hub | Yes, 2026-07 |
-| Companion | `E:\companion` — **separate repo** | **not verified** — only its MAB integration (support tickets/ideas via the hub's public embed API) was touched | Live, real subscribers | Partially — its use of the MAB hub API is verified; its own frontend/backend stack is not |
+| Companion | `E:\companion` — **separate repo** | **not verified** — only its MAB integration (support tickets/ideas via the hub's public embed API) was touched. Has its **own Supabase project** (`companion`, ref `oprsmhyvihrahxpfvdih`) — separate from the MAB hub's project (`kqhyppacddcqkkovoklb`); presumably its own app data lives there, distinct from the shared support/ideas data that lives in the MAB hub's Postgres | Live, real subscribers | Partially — its use of the MAB hub API is verified, and its Supabase project's existence/ref is confirmed via `supabase projects list`; its own frontend/backend code is not verified |
 | TSM Subs | `E:\tsm_subs` | **not touched** this round | React+Vite+PHP/MySQL per earlier notes | Not re-verified — carry forward with caution |
 | taskmanager / Task Planner | TSM web root `taskmanager/` | **not verified** | Deployed, but **no MAB subscription-platform wiring found** (no `MAB_SECRET_KEY`/`MAB_API_BASE` anywhere in it) — it is not currently a MAB-integrated product, whatever else it does | Partially — absence of MAB wiring confirmed 2026-07 |
 | `myappbuddy` (retired), `myappbuddy-leave`, `leave_app`, other `Documents\Local_Claude\*` repos | `C:\Users\david\Documents\Local_Claude\` | — | Per that workspace's own `CLAUDE.md`: some are retired/superseded lineages (e.g. an earlier `myappbuddy` checkout retired in favour of `E:\MyAppBuddy`, an earlier single-tenant Leave build). **Do not assume these are the same code as `E:\MyAppBuddy\leave` etc. above** — check that workspace's own `CLAUDE.md` before touching anything there. | Not re-verified this round |
@@ -97,8 +97,12 @@ otherwise.
 - **GitHub:** `gh auth login` once per machine, then use `gh` directly —
   no tokens needed in prompts or files.
 - **Supabase:** `supabase login` once per machine, for project/schema
-  management via the CLI. Runtime keys/connection strings live in each app's
-  own config — PHP apps: `config.php` (gitignored; `config.example.php` is
+  management via the CLI. `supabase projects list` (verified 2026-07-05)
+  shows two projects: `MyAppBuddy` (ref `kqhyppacddcqkkovoklb`, the hub's own
+  Postgres DB) and `companion` (ref `oprsmhyvihrahxpfvdih`, Companion's own
+  project). Neither is `supabase link`ed in any local checkout yet. Runtime
+  keys/connection strings live in each app's own config — PHP apps:
+  `config.php` (gitignored; `config.example.php` is
   the committed template); future Supabase-native apps: `.env` (gitignored,
   see that repo's `.env.example`).
 - **Hostinger SSH:**
