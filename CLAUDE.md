@@ -12,30 +12,8 @@ misleads the next session instead of just leaving a gap.
 
 ## Setup on a new PC
 
-Source of truth: this repo — https://github.com/davidyounger1-design/myappbuddy-meta
-
-```
-git clone https://github.com/davidyounger1-design/myappbuddy-meta.git ~/myappbuddy-meta
-ln -s ~/myappbuddy-meta/CLAUDE.md ~/.claude/CLAUDE.md
-```
-
-(Windows without symlink permission — e.g. Developer Mode not enabled: `copy`
-the file instead, and re-copy it after every edit. A symlink is preferred
-because it can't silently drift out of date.)
-
-Then, once per machine (these do **not** sync — each PC authenticates itself):
-
-```
-gh auth login
-supabase login
-```
-
-Also register that machine's SSH public key in the relevant Hostinger hPanel
-(see "Hostinger SSH access" below) — each PC needs its own keypair.
-
-**To edit this file:** edit it in the `myappbuddy-meta` repo, commit, push,
-then on the other PC: `git -C ~/myappbuddy-meta pull` (re-copy on Windows if
-not symlinked).
+See [SETUP.md](SETUP.md) in this repo for the new-machine bootstrap steps
+(clone, symlink, `gh auth login`, `supabase login`, SSH keypair registration).
 
 ## Who owns this
 
@@ -45,26 +23,12 @@ for The Service Manager Pty Ltd (TSM) — some infrastructure (Hostinger
 accounts, some app installs) is shared/adjacent between the two; don't
 assume they're the same business.
 
-## The MyAppBuddy hub (verified 2026-07-04)
+## The MyAppBuddy hub
 
-- **Repo:** `E:\MyAppBuddy` on the primary dev PC — github.com/davidyounger1-design/myappbuddy.
-  One repo holds the hub itself *and* several product apps as subdirectories
-  (see table below) — not split into per-app repos today.
-- **Backend:** single PHP 8 file, `api/index.php` (~200+ routes) + `api/lib/*.php`.
-  Database is **Postgres, hosted on Supabase**, reached through a custom
-  `db.php` + `pgTranslate()` layer that translates MySQL-dialect SQL written
-  in the app code at query time — apps do not talk to Supabase directly or
-  use the Supabase client SDK.
-- **Frontend:** React 19 + Vite SPA (`web/src/`) — admin/owner/customer
-  consoles. Embeddable widgets (`<myappbuddy-support>`, `<myappbuddy-ideas>`,
-  `<myappbuddy-pricing>`) ship from `embed/` for other apps to drop in.
-- **Deploy:** `deploy/deploy.sh {dev|live|leave|timetracker|licencemanager|...}`
-  — builds, ships over SSH, runs migrations, health-checks. Self-hosted
-  installs (e.g. a customer's own on-prem copy) instead get **signed update
-  packages** via `deploy/publish.sh` (RSA-signed `.pkg.tar`, signature
-  verified client-side before applying), not a direct deploy.
-- **Hosting:** Hostinger, two separate accounts (see "Hostinger SSH access").
-- Money is handled as integer minor units (cents) throughout — never floats.
+App-specific architecture now lives in the hub's own repo —
+[`E:\MyAppBuddy\CLAUDE.md`](E:\MyAppBuddy\CLAUDE.md) (verified 2026-07-04) —
+per this file's own rule that app-specific detail belongs there, not here.
+See that file for stack, deploy process, and structure.
 
 ## Apps in the portfolio
 
@@ -172,23 +136,6 @@ otherwise.
 - **Before building or deploying:** `git pull` first in whichever repo
   you're in. Resolve merge conflicts properly — never just overwrite.
 
-## Known cross-cutting work
-
-- **Companion ↔ MAB hub integration (fixed 2026-07-04):** Companion's
-  support-ticket/idea embed widgets pass `app_ref = the user's email`, but
-  Companion had no MAB secret API key, so it could never call
-  `PUT /v1/link/subscriptions/:id` to register `app_ref` on its
-  subscriptions — meaning idea voting/commenting and ticket replies (which
-  require an active-subscription match) always failed for real subscribers,
-  even though viewing/submitting always worked. Fixed hub-side with a
-  one-time backfill + a newly-minted secret key for `app_id=companion`.
-  **Still needed in Companion's own repo:** store `MAB_SECRET_KEY` and call
-  `PUT /v1/link/subscriptions/:id {"orgId": "<user's email>"}` after each
-  checkout so new subscriptions register `app_ref` automatically. See the
-  Companion session's own history for the full handoff instructions.
-- Portfolio-wide move to Supabase: aspirational — no product app besides the
-  MAB hub's own DB currently runs on Supabase.
-
 ## Quick-reference paths (primary Windows dev PC — adjust per machine)
 
 Paths below are for the PC this table was written on. On a second PC, note
@@ -205,3 +152,12 @@ assuming these are universal — drive letters and folder layout may differ.
 | `E:\Leave\` | Leave app (yet another path — reconcile against `E:\MyAppBuddy\leave` and `Documents\Local_Claude` before assuming which is current) |
 | `E:\tsm\` | TSM-related work |
 | `C:\Users\david` | Home — global Claude config only, not a project root |
+
+
+
+# Global Instructions
+
+These are generic Claude Code behavior rules, not MyAppBuddy-specific —
+split into their own file so this file's scope stays honest to its title.
+
+@global-instructions.md
