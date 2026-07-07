@@ -136,6 +136,59 @@ otherwise.
 - **Before building or deploying:** `git pull` first in whichever repo
   you're in. Resolve merge conflicts properly — never just overwrite.
 
+## MAB feature-restriction framework — required for every app
+
+Formalized 2026-07-07 in the MyAppBuddy hub (`E:\MyAppBuddy` —
+see its own `CLAUDE.md` for the hub-side schema/API detail). Any Claude Code
+session working in an app that plugs into MyAppBuddy (Companion, Time
+Tracker, Leave Planner, and any future MAB-integrated app) should apply this
+when the app adds a feature worth restricting by plan:
+
+> **Align this app with MyAppBuddy's plan-feature-restriction framework**
+>
+> MyAppBuddy (the hub at myappbuddy.com.au) is now the single source of
+> truth for "which plan includes which feature." This app should never
+> maintain its own separate copy of plan/feature/entitlement data — it
+> declares candidate features to the hub, and asks the hub what's actually
+> included before restricting anything. Your `app_id` is `companion` /
+> `timetracker` / `leaveplanner` (use whichever matches this app).
+>
+> 1. **Create a manifest** — a small file at the repo root (e.g.
+>    `mab-features.json`): an array of `{key, name}` for features worth
+>    per-plan control. Not every function — only things significant enough
+>    that "which plan gets this" is a real product decision (new premium
+>    capability, usage limit, etc.). This is a judgement call made when the
+>    feature is built, reviewed like any other code.
+> 2. **Publish it on deploy** — add a step to your deploy script that POSTs
+>    the manifest: `POST https://myappbuddy.com.au/api/v1/apps/<app_id>/features/publish`,
+>    body `{"features": [{"key": "...", "name": "..."}]}`, header
+>    `Authorization: Bearer <this app's secret key>` (get one from MAB
+>    Admin → Developers if this app doesn't have one yet). Safe to run on
+>    every deploy — an already-known key is a no-op. A genuinely new key
+>    gets created but starts **included in no plan** — a pill/badge shows
+>    up in the MAB admin console for review and plan assignment. Don't
+>    expect a newly-published feature to be live for any customer until
+>    that review happens.
+> 3. **Gate behavior by calling the hub, not local logic** —
+>    `GET /v1/subscriptions/:id/features` (publishable key), or for a
+>    self-hosted install, read the `features` claim already in the signed
+>    license. Treat a missing key as **NOT included** (fail closed) — never
+>    treat "hub hasn't decided yet" as "allowed."
+> 4. **Find and retire any parallel plan/feature logic already in this
+>    app** — a local plans table, a hardcoded pricing/feature array, a
+>    hand-coded limits function, anything deciding entitlements outside the
+>    hub. There should be exactly one source of truth.
+> 5. **Don't touch pricing or plan definitions** (name, price, which plans
+>    exist) — that stays exclusively in MAB Admin → Plans & pricing /
+>    Entitlements. This app only proposes candidate features and reads the
+>    resulting decision.
+
+As of 2026-07-07: no app has actually adopted this yet (mechanism exists,
+nothing calls it) — Companion and Time Tracker each still have their own
+parallel plan/feature logic per step 4 above. Daily Brief and Task Planner
+aren't MAB catalog apps at all yet, so this doesn't apply to them until
+that's set up first.
+
 ## Quick-reference paths (primary Windows dev PC — adjust per machine)
 
 Paths below are for the PC this table was written on. On a second PC, note
