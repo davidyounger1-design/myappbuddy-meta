@@ -36,13 +36,15 @@ See that file for stack, deploy process, and structure.
 |---|---|---|---|---|
 | MyAppBuddy hub | `E:\MyAppBuddy` (repo root) | React+Vite / PHP 8 + Postgres (Supabase) | Live — myappbuddy.com.au | Yes, 2026-07 |
 | Leave Planner | `E:\MyAppBuddy\leave` (same repo) | PHP-rendered, inline JS, no build step | PHP 8 + own MySQL DB | Live — two installs: myappbuddy.com.au/leave (sold to new customers) and leave.theservicemanager.com (in active use), same code | Yes, 2026-07 |
-| Time Tracker | `E:\MyAppBuddy\timetracker` (prod), `devtimetracker` (dev) — same repo | PHP-rendered, inline JS | PHP 8 + own MySQL DB | Live — timetracker.myappbuddy.com.au | Yes, 2026-07 |
+| Time Tracker (MAB SaaS) | `E:\MyAppBuddy\timetracker` (prod), `devtimetracker` (dev) — same repo | PHP-rendered, inline JS | PHP 8 + own MySQL DB | Live — timetracker.myappbuddy.com.au. **Split 2026-07-15** — no longer shares code with TSM's fork below; see that row and its own `CLAUDE.md` | Yes, 2026-07 |
+| TSM Time Tracker | `E:\tsm_timetracker` — **separate repo** (github.com/davidyounger/tsm_timetracker, private, owner account `davidyounger` not `davidyounger1-design`) | PHP-rendered, inline JS, no build step, single file (`index.php`) | PHP 8 + own MySQL DB (TSM Hostinger account) | Live — theservicemanager.com/timetracker/. Forked from the MAB variant above 2026-07-15 with every MAB/subscription trace surgically removed (unrestricted features, no billing, no self-update — frozen, manually-deployed, diverges permanently). See its own `CLAUDE.md` for deploy steps and a known ternary-bug pattern to watch for elsewhere in the file | Yes, 2026-07-20 |
 | Daily Brief | `E:\MyAppBuddy\dailybrief` (same repo) | PHP-rendered | PHP 8 + own MySQL DB, Gemini API | Live | Yes, 2026-07 |
 | licencemanager (self-hosted MAB) | deployed copy of the hub, not a separate repo | same as hub | same as hub, own MySQL DB | Live — licencemanager.theservicemanager.com, TSM's own on-prem install of the MyAppBuddy hub | Yes, 2026-07 |
-| Companion | `E:\companion` — **separate repo** | **not verified** — only its MAB integration (support tickets/ideas via the hub's public embed API) was touched. Has its **own Supabase project** (`companion`, ref `oprsmhyvihrahxpfvdih`) — separate from the MAB hub's project (`kqhyppacddcqkkovoklb`); presumably its own app data lives there, distinct from the shared support/ideas data that lives in the MAB hub's Postgres | Live, real subscribers | Partially — its use of the MAB hub API is verified, and its Supabase project's existence/ref is confirmed via `supabase projects list`; its own frontend/backend code is not verified |
+| Companion | `E:\companion` — **separate repo** | **not verified** — only its MAB integration (support tickets/ideas via the hub's public embed API) was touched. Lives in the shared **"MABApps" Supabase project** (ref `oprsmhyvihrahxpfvdih`) — NOT its own dedicated project; it's a tenant of that shared project (in `public` schema, predating the schema-per-app convention), distinct from the MAB hub's own separate project (`kqhyppacddcqkkovoklb`, name "MyAppBuddy") | Live, real subscribers | Partially — its use of the MAB hub API is verified, and the Supabase project ref/name confirmed via `supabase projects list` 2026-07-18; its own frontend/backend code is not verified |
+| Haven | `E:\haven` — **separate repo** (github.com/davidyounger1-design/haven, private) | No-build in-browser JSX frontend (not yet ported, see below) / **Supabase-native backend** — own Postgres schema `haven` in the same shared "MABApps" project as Companion (`oprsmhyvihrahxpfvdih`); RLS + SECURITY DEFINER RPCs (no PHP backend), Supabase Auth, 3 edge functions for MAB subscription lifecycle + entitlements | Backend live — schema/RLS/RPCs/entitlements/webhook all confirmed working end-to-end. **Frontend not yet ported** (still the old NAS PIN-gated JSX) — not customer-facing yet | Yes, 2026-07-19 |
 | TSM Subs | `E:\tsm_subs` | **not touched** this round | React+Vite+PHP/MySQL per earlier notes | Not re-verified — carry forward with caution |
 | taskmanager / Task Planner | TSM web root `taskmanager/` | **not verified** | Deployed, but **no MAB subscription-platform wiring found** (no `MAB_SECRET_KEY`/`MAB_API_BASE` anywhere in it) — it is not currently a MAB-integrated product, whatever else it does | Partially — absence of MAB wiring confirmed 2026-07 |
-| `myappbuddy` (retired), `myappbuddy-leave`, `leave_app`, other `Documents\Local_Claude\*` repos | `C:\Users\david\Documents\Local_Claude\` | — | Per that workspace's own `CLAUDE.md`: some are retired/superseded lineages (e.g. an earlier `myappbuddy` checkout retired in favour of `E:\MyAppBuddy`, an earlier single-tenant Leave build). **Do not assume these are the same code as `E:\MyAppBuddy\leave` etc. above** — check that workspace's own `CLAUDE.md` before touching anything there. | Not re-verified this round |
+| `myappbuddy` (retired), `myappbuddy-leave`, `leave_app`, other `Documents\Local_Claude\*` repos | `C:\Users\david\Documents\Local_Claude\` | — | Per that workspace's own `CLAUDE.md`: some are retired/superseded lineages (e.g. an earlier `myappbuddy` checkout retired in favour of `E:\MyAppBuddy`, an earlier single-tenant Leave build). **Do not assume these are the same code as `E:\MyAppBuddy\leave` etc. above** — check that workspace's own `CLAUDE.md` before touching anything there. Haven's own earlier NAS-based lineage (`E:\Haven update v1.7`, live at `192.168.1.203/haven/`) is superseded by `E:\haven` above, but the NAS install is still the only customer-usable version until Phase 4 (frontend port) lands. | Not re-verified this round |
 
 **Known ambiguity to resolve:** there appear to be more than one historical
 lineage for at least "Leave" (and possibly others) — one under
@@ -61,14 +63,19 @@ otherwise.
 - **GitHub:** `gh auth login` once per machine, then use `gh` directly —
   no tokens needed in prompts or files.
 - **Supabase:** `supabase login` once per machine, for project/schema
-  management via the CLI. `supabase projects list` (verified 2026-07-05)
+  management via the CLI. `supabase projects list` (re-verified 2026-07-18)
   shows two projects: `MyAppBuddy` (ref `kqhyppacddcqkkovoklb`, the hub's own
-  Postgres DB) and `companion` (ref `oprsmhyvihrahxpfvdih`, Companion's own
-  project). Neither is `supabase link`ed in any local checkout yet. Runtime
-  keys/connection strings live in each app's own config — PHP apps:
-  `config.php` (gitignored; `config.example.php` is
-  the committed template); future Supabase-native apps: `.env` (gitignored,
-  see that repo's `.env.example`).
+  dedicated Postgres DB) and **`MABApps`** (ref `oprsmhyvihrahxpfvdih`) — a
+  **shared** project used by multiple product apps, each in its own Postgres
+  schema (not `public`, not a table prefix): Haven owns schema `haven`;
+  Companion currently sits in `public` (predating this convention). Do not
+  create a new Supabase project for a MABApps-family app without a specific
+  reason — default to a new schema in the shared `MABApps` project instead.
+  `E:\haven` is `supabase link`ed to `MABApps`; no other local checkout is
+  linked yet. Runtime keys/connection strings live in each app's own config —
+  PHP apps: `config.php` (gitignored; `config.example.php` is the committed
+  template); Supabase-native apps (Haven): no local secrets file at all —
+  Supabase secrets are managed entirely via `supabase secrets set`.
 - **Hostinger SSH:**
   - **theservicemanager.com** account (`u566554909`): `ssh -p 65002 -i ~/.ssh/hostinger_tsm u566554909@46.202.138.84`
     Web root: `domains/theservicemanager.com/public_html/`. Subdirectories:
@@ -151,7 +158,7 @@ when the app adds a feature worth restricting by plan:
 > maintain its own separate copy of plan/feature/entitlement data — it
 > declares candidate features to the hub, and asks the hub what's actually
 > included before restricting anything. Your `app_id` is `companion` /
-> `timetracker` / `leaveplanner` (use whichever matches this app).
+> `timetracker` / `leaveplanner` / `haven` (use whichever matches this app).
 >
 > 1. **Create a manifest** — a small file at the repo root (e.g.
 >    `mab-features.json`): an array of `{key, name}` for features worth
@@ -183,11 +190,21 @@ when the app adds a feature worth restricting by plan:
 >    Entitlements. This app only proposes candidate features and reads the
 >    resulting decision.
 
-As of 2026-07-07: no app has actually adopted this yet (mechanism exists,
-nothing calls it) — Companion and Time Tracker each still have their own
-parallel plan/feature logic per step 4 above. Daily Brief and Task Planner
-aren't MAB catalog apps at all yet, so this doesn't apply to them until
-that's set up first.
+As of 2026-07-07: Companion and Time Tracker each still have their own
+parallel plan/feature logic per step 4 above (not yet retired). Daily Brief
+and Task Planner aren't MAB catalog apps at all yet, so this doesn't apply
+to them until that's set up first.
+
+**Haven fully adopted this 2026-07-19** — the first app to do so end-to-end.
+5 candidate features published (`mab-features.json` + a standalone publish
+script), ticked onto its one plan (`haven_starter`) in MAB Admin →
+Entitlements, and gating confirmed working via both a real subscription's
+`features` call AND the webhook (`subscription.created`/`subscription.canceled`)
+keeping `haven.orgs.billing_status`/`plan` in sync. See `E:\haven`'s own
+`README.md`/`SUPABASE.md` for the concrete implementation (RLS + SECURITY
+DEFINER RPCs derive org_id server-side — a client can never pass its own
+org_id, closing a class of bug worth checking for in any other app's
+equivalent code).
 
 ## Quick-reference paths (primary Windows dev PC — adjust per machine)
 
@@ -199,6 +216,7 @@ assuming these are universal — drive letters and folder layout may differ.
 |---|---|
 | `E:\MyAppBuddy\` | MyAppBuddy hub + family apps (timetracker, devtimetracker, leave, dailybrief, etc.) |
 | `E:\companion\` | Companion app (separate repo) |
+| `E:\haven\` | Haven — NDIS budget planner (separate repo, Supabase-native backend) |
 | `E:\tsm_subs\` | TSM Subs (separate repo) |
 | `C:\Users\david\Documents\Local_Claude\` | Multi-project workspace (older/parallel MyAppBuddy, Leave, TaskPlanner, DailyBrief, TSMPlus lineage — see "known ambiguity" above) |
 | `E:\task manager\` | Task Manager app |
@@ -214,3 +232,20 @@ These are generic Claude Code behavior rules, not MyAppBuddy-specific —
 split into their own file so this file's scope stays honest to its title.
 
 @global-instructions.md
+
+
+## Model selection for subagents
+
+When spawning subagents for any part of a task, choose the model based on the nature of that specific piece of work rather than defaulting to one model for everything.
+
+Use Opus for: ambiguous or open-ended problems with no clear spec, architectural or system-design decisions, tasks where a wrong call is expensive to unwind (security review, data migration logic, anything touching production data), multi-step reasoning where errors compound, or synthesizing conflicting information into a single judgment call.
+
+Use Sonnet as the default for: standard implementation work with a clear spec (writing a function, wiring an API, fixing a described bug), most code review, refactors, and test writing — any subagent task well-scoped enough that a competent mid-level engineer could execute it from the instructions alone.
+
+Use Haiku for: high-volume, low-ambiguity, repetitive work — the same transformation across many files, extracting structured data from text, bulk classification/tagging, formatting/linting passes, or simple lookups and summarization where speed and cost matter more than depth.
+
+Decision rule: how much judgment does this task require, and how costly is a mistake? High judgment or high cost of error -> Opus. Clear spec, moderate complexity -> Sonnet. Repetitive, low-stakes, high-volume -> Haiku. When unsure between two tiers, prefer the cheaper one and escalate only if the output comes back inadequate.
+
+When running independent subagents in parallel, mix models freely across the batch.
+
+Before spawning a subagent where the right tier isn't obvious, state the model choice and reasoning in one line (e.g., "Opus - this migration plan has no existing spec and errors are costly to reverse").
